@@ -6,10 +6,10 @@ ItemDelegate {
 
     highlighted: grid.activeFocus && grid.currentItem === this
     background: Rectangle {
-        radius: 12
-        color: parent.highlighted ? "#263b50" : parent.hovered ? "#202e40" : "#172232"
+        radius: 8
+        color: parent.highlighted ? "#283447" : parent.hovered ? "#202e40" : "#191f2a"
         border.width: parent.highlighted ? 3 : 1
-        border.color: parent.highlighted ? "#66d9ef" : "#2b3c50"
+        border.color: parent.highlighted ? "#b4e7ff" : "#252d3a"
     }
 
     Keys.onLeftPressed: {

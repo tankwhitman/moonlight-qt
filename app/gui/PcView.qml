@@ -15,10 +15,23 @@ CenteredGridView {
     id: pcGrid
     focus: true
     activeFocusOnTab: true
-    topMargin: 20
+    topMargin: 170 * window.uiScale
+    minMargin: 40 * window.uiScale
+    clip: true
     bottomMargin: 5
-    cellWidth: 340 * window.uiScale; cellHeight: 350 * window.uiScale;
+    cellWidth: 384 * window.uiScale; cellHeight: 260 * window.uiScale;
     objectName: qsTr("Computers")
+
+    Rectangle {
+        z: 5; width: parent.width; height: 154 * window.uiScale; color: "#10141c"
+        Column {
+            x: 48 * window.uiScale; y: 20 * window.uiScale; spacing: 8 * window.uiScale
+            Label { text: qsTr("PLAY ANYWHERE"); color: "#7b91ad"; font.pixelSize: 12 * window.uiScale; font.letterSpacing: 3 }
+            Label { text: qsTr("Your computers"); font.pixelSize: 38 * window.uiScale; font.bold: true }
+            Label { text: qsTr("Choose a PC to open its game library. X opens connection options."); color: "#a4b0c1"; font.pixelSize: 16 * window.uiScale }
+        }
+        Rectangle { anchors.bottom: parent.bottom; x: 48 * window.uiScale; width: parent.width - 96 * window.uiScale; height: 1; color: "#28303e" }
+    }
 
     Component.onCompleted: {
         // Don't show any highlighted item until interacting with them.
@@ -118,8 +131,8 @@ CenteredGridView {
             y: 20 * window.uiScale
             source: "qrc:/res/desktop_windows-48px.svg"
             sourceSize {
-                width: 180 * window.uiScale
-                height: 180 * window.uiScale
+                width: 76 * window.uiScale
+                height: 76 * window.uiScale
             }
         }
 
@@ -155,7 +168,7 @@ CenteredGridView {
             width: parent.width
             anchors.top: pcIcon.bottom
             height: 64 * window.uiScale
-            font.pixelSize: 28 * window.uiScale
+            font.pixelSize: 24 * window.uiScale
             font.bold: true
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap

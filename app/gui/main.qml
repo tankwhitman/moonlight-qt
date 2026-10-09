@@ -15,7 +15,7 @@ ApplicationWindow {
     property real uiScale: Math.max(1.0, Math.min(width / 1280, height / 720))
     Material.theme: Material.Dark
     Material.accent: "#66d9ef"
-    color: "#101722"
+    color: "#10141c"
 
     // Set by SettingsView to force the back operation to pop all
     // pages except the initial view. This is required when doing
@@ -32,7 +32,7 @@ ApplicationWindow {
         // in order to improve contrast between GFE's placeholder box art
         // and the background of the app grid.
         if (SystemProperties.usesMaterial3Theme) {
-            Material.background = "#101722"
+            Material.background = "#10141c"
         }
 
         SdlGamepadKeyNavigation.enable()
@@ -249,20 +249,28 @@ ApplicationWindow {
     footer: ToolBar {
         visible: stackView.currentItem instanceof PcView || stackView.currentItem instanceof AppView
         height: 52 * window.uiScale
-        background: Rectangle { color: "#172232" }
-        Label {
-            anchors.centerIn: parent
-            font.pixelSize: 18 * window.uiScale
-            text: StreamingPreferences.swapFaceButtons ?
-                qsTr("B  Select     A  Back     Y  Options     X / Start  Settings") :
-                qsTr("A  Select     B  Back     X  Options     Y / Start  Settings")
+        background: Rectangle { color: "#10141c" }
+        Row {
+            anchors.right: parent.right; anchors.rightMargin: 48 * window.uiScale
+            anchors.verticalCenter: parent.verticalCenter; spacing: 26 * window.uiScale
+            Repeater {
+                model: StreamingPreferences.swapFaceButtons ? ["B", "A", "Y", "X"] : ["A", "B", "X", "Y"]
+                delegate: Row {
+                    spacing: 8 * window.uiScale
+                    Rectangle {
+                        width: 26 * window.uiScale; height: width; radius: width / 2; color: "#d8e1ef"
+                        Label { anchors.centerIn: parent; text: modelData; color: "#10141c"; font.bold: true; font.pixelSize: 14 * window.uiScale }
+                    }
+                    Label { anchors.verticalCenter: parent.verticalCenter; text: [qsTr("Select"), qsTr("Back"), qsTr("Options"), qsTr("Settings")][index]; font.pixelSize: 15 * window.uiScale; color: "#b4c0d1" }
+                }
+            }
         }
     }
 
     header: ToolBar {
         id: toolBar
-        height: 72 * window.uiScale
-        background: Rectangle { color: "#172232" }
+        height: 80 * window.uiScale
+        background: Rectangle { color: "#10141c" }
         anchors.topMargin: 5
         anchors.bottomMargin: 5
 
@@ -270,11 +278,12 @@ ApplicationWindow {
             id: titleLabel
             visible: toolBar.width > 700
             anchors.fill: parent
-            text: stackView.currentItem.objectName
+            text: stackView.currentItem instanceof PcView ? qsTr("Moonlight") : stackView.currentItem.objectName
             font.pixelSize: 28 * window.uiScale
             font.bold: true
             elide: Label.ElideRight
-            horizontalAlignment: Qt.AlignHCenter
+            horizontalAlignment: Qt.AlignLeft
+            leftPadding: 100 * window.uiScale
             verticalAlignment: Qt.AlignVCenter
         }
 

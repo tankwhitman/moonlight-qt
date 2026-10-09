@@ -17,9 +17,32 @@ CenteredGridView {
     id: appGrid
     focus: true
     activeFocusOnTab: true
-    topMargin: 20
+    topMargin: 174 * window.uiScale
+    clip: true
+    minMargin: 40 * window.uiScale
     bottomMargin: 5
-    cellWidth: 260 * window.uiScale; cellHeight: 350 * window.uiScale;
+    cellWidth: 232 * window.uiScale; cellHeight: 310 * window.uiScale;
+
+    Rectangle {
+        z: 5
+        width: parent.width; height: 158 * window.uiScale
+        color: "#10141c"
+        Column {
+            x: 48 * window.uiScale; y: 22 * window.uiScale
+            spacing: 7 * window.uiScale
+            Label { text: qsTr("YOUR LIBRARY"); color: "#7b91ad"; font.pixelSize: 12 * window.uiScale; font.letterSpacing: 3 }
+            Label {
+                width: appGrid.width - 96 * window.uiScale
+                text: appGrid.currentItem ? appGrid.currentItem.gameTitle : qsTr("Choose a game")
+                font.pixelSize: 38 * window.uiScale; font.bold: true; elide: Text.ElideRight
+            }
+            Label {
+                text: qsTr("%1 apps available  ·  Stream from %2").arg(appGrid.count).arg(appGrid.objectName)
+                color: "#a4b0c1"; font.pixelSize: 16 * window.uiScale
+            }
+        }
+        Rectangle { anchors.bottom: parent.bottom; x: 48 * window.uiScale; width: parent.width - 96 * window.uiScale; height: 1; color: "#28303e" }
+    }
 
     function computerLost()
     {
@@ -76,6 +99,7 @@ import AppModel 1.0; AppModel {}', parent, '')
         width: appGrid.cellWidth - 20 * window.uiScale; height: appGrid.cellHeight - 20 * window.uiScale;
         grid: appGrid
 
+        property string gameTitle: model.name
         property alias appContextMenu: appContextMenuLoader.item
         property alias appNameText: appNameTextLoader.item
 
@@ -88,18 +112,33 @@ import AppModel 1.0; AppModel {}', parent, '')
             id: appIcon
             anchors.horizontalCenter: parent.horizontalCenter
             y: 10 * window.uiScale
-            width: 220 * window.uiScale
-            height: 293 * window.uiScale
-            fillMode: Image.PreserveAspectFit
+            width: 196 * window.uiScale
+            height: 261 * window.uiScale
+            fillMode: Image.PreserveAspectCrop
             source: model.boxart
 
             Rectangle {
                 anchors.fill: parent
                 visible: appIcon.isPlaceholder
                 gradient: Gradient {
-                    GradientStop { position: 0; color: "#31495e" }
-                    GradientStop { position: 1; color: "#1b2b3d" }
+                    GradientStop { position: 0; color: ["#254c62", "#573557", "#3e515e", "#31544c"][index % 4] }
+                    GradientStop { position: 1; color: "#141e2b" }
                 }
+            }
+
+            Label {
+                visible: appIcon.isPlaceholder
+                anchors.top: parent.top; anchors.left: parent.left
+                anchors.margins: 18 * window.uiScale
+                text: model.name.charAt(0).toUpperCase()
+                color: "#35ffffff"; font.pixelSize: 112 * window.uiScale; font.bold: true
+            }
+            Label {
+                visible: appIcon.isPlaceholder
+                anchors.left: parent.left; anchors.bottom: parent.bottom
+                anchors.margins: 18 * window.uiScale
+                text: qsTr("STREAM APP"); color: "#849caf"
+                font.pixelSize: 10 * window.uiScale; font.letterSpacing: 2
             }
 
             onSourceSizeChanged: {
@@ -218,11 +257,13 @@ import AppModel 1.0; AppModel {}', parent, '')
             sourceComponent: Label {
                 id: appNameText
                 text: model.name
-                font.pointSize: 22
+                font.pixelSize: 22 * window.uiScale
+                font.bold: true
                 leftPadding: 20
                 rightPadding: 20
-                verticalAlignment: Text.AlignVCenter
-                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignBottom
+                bottomPadding: 52 * window.uiScale
+                horizontalAlignment: Text.AlignLeft
                 wrapMode: Text.Wrap
                 elide: Text.ElideRight
             }
