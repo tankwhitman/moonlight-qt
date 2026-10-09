@@ -28,6 +28,8 @@ public:
 
     Q_INVOKABLE int getConnectedGamepads();
 
+    Q_INVOKABLE bool getUiNavMode() const { return m_UiNavMode; }
+
 private:
     void sendKey(QEvent::Type type, Qt::Key key, Qt::KeyboardModifiers modifiers = Qt::NoModifier);
 

@@ -19,7 +19,7 @@ CenteredGridView {
     activeFocusOnTab: true
     topMargin: 20
     bottomMargin: 5
-    cellWidth: 230; cellHeight: 297;
+    cellWidth: 260 * window.uiScale; cellHeight: 350 * window.uiScale;
 
     function computerLost()
     {
@@ -73,7 +73,7 @@ import AppModel 1.0; AppModel {}', parent, '')
     model: appModel
 
     delegate: NavigableItemDelegate {
-        width: 220; height: 287;
+        width: appGrid.cellWidth - 20 * window.uiScale; height: appGrid.cellHeight - 20 * window.uiScale;
         grid: appGrid
 
         property alias appContextMenu: appContextMenuLoader.item
@@ -87,8 +87,20 @@ import AppModel 1.0; AppModel {}', parent, '')
 
             id: appIcon
             anchors.horizontalCenter: parent.horizontalCenter
-            y: 10
+            y: 10 * window.uiScale
+            width: 220 * window.uiScale
+            height: 293 * window.uiScale
+            fillMode: Image.PreserveAspectFit
             source: model.boxart
+
+            Rectangle {
+                anchors.fill: parent
+                visible: appIcon.isPlaceholder
+                gradient: Gradient {
+                    GradientStop { position: 0; color: "#31495e" }
+                    GradientStop { position: 1; color: "#1b2b3d" }
+                }
+            }
 
             onSourceSizeChanged: {
                 // Nearly all of Nvidia's official box art does not match the dimensions of placeholder
@@ -107,8 +119,7 @@ import AppModel 1.0; AppModel {}', parent, '')
                     isPlaceholder = false
                 }
 
-                width = 200
-                height = 267
+                // Keep the responsive size bindings intact when box art arrives.
             }
 
             // Display a tooltip with the full name if it's truncated
@@ -116,6 +127,18 @@ import AppModel 1.0; AppModel {}', parent, '')
             ToolTip.delay: 1000
             ToolTip.timeout: 5000
             ToolTip.visible: (parent.hovered || parent.highlighted) && (!appNameText || appNameText.truncated)
+        }
+
+        Label {
+            anchors.top: appIcon.bottom
+            anchors.topMargin: 4 * window.uiScale
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: parent.width - 16 * window.uiScale
+            font.pixelSize: 16 * window.uiScale
+            text: model.name
+            visible: !appIcon.isPlaceholder
+            elide: Text.ElideRight
+            horizontalAlignment: Text.AlignHCenter
         }
 
         Loader {

@@ -17,7 +17,7 @@ CenteredGridView {
     activeFocusOnTab: true
     topMargin: 20
     bottomMargin: 5
-    cellWidth: 310; cellHeight: 330;
+    cellWidth: 340 * window.uiScale; cellHeight: 350 * window.uiScale;
     objectName: qsTr("Computers")
 
     Component.onCompleted: {
@@ -107,7 +107,7 @@ CenteredGridView {
     model: computerModel
 
     delegate: NavigableItemDelegate {
-        width: 300; height: 320;
+        width: pcGrid.cellWidth - 20 * window.uiScale; height: pcGrid.cellHeight - 20 * window.uiScale;
         grid: pcGrid
 
         property alias pcContextMenu : pcContextMenuLoader.item
@@ -115,10 +115,11 @@ CenteredGridView {
         Image {
             id: pcIcon
             anchors.horizontalCenter: parent.horizontalCenter
+            y: 20 * window.uiScale
             source: "qrc:/res/desktop_windows-48px.svg"
             sourceSize {
-                width: 200
-                height: 200
+                width: 180 * window.uiScale
+                height: 180 * window.uiScale
             }
         }
 
@@ -153,11 +154,23 @@ CenteredGridView {
 
             width: parent.width
             anchors.top: pcIcon.bottom
-            anchors.bottom: parent.bottom
-            font.pointSize: 36
+            height: 64 * window.uiScale
+            font.pixelSize: 28 * window.uiScale
+            font.bold: true
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap
             elide: Text.ElideRight
+        }
+
+        Label {
+            anchors.top: pcNameText.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: parent.width - 20 * window.uiScale
+            text: (model.online ? qsTr("Online") : model.statusUnknown ? qsTr("Connecting…") : qsTr("Offline")) + "\n" + model.connection
+            font.pixelSize: 16 * window.uiScale
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.Wrap
+            color: model.online ? "#8be0b0" : "#a9b6c8"
         }
 
         Loader {
@@ -184,6 +197,13 @@ CenteredGridView {
                     text: qsTr("Wake PC")
                     onTriggered: computerModel.wakeComputer(index)
                     visible: !model.online && model.wakeable
+                }
+                NavigableMenuItem {
+                    text: qsTr("Connection: LAN / Tailscale")
+                    onTriggered: {
+                        connectionDialog.pcIndex = index
+                        connectionDialog.open()
+                    }
                 }
                 NavigableMenuItem {
                     text: qsTr("Test Network")
@@ -277,6 +297,20 @@ CenteredGridView {
             deletePcDialog.pcIndex = index
             deletePcDialog.pcName = model.name
             deletePcDialog.open()
+        }
+    }
+
+    ConnectionDialog {
+        id: connectionDialog
+        property int pcIndex: -1
+        onOpened: {
+            var config = computerModel.connectionSettings(pcIndex)
+            loadSettings(config)
+        }
+        onSaveRequested: function(mode, lan, tailscale) {
+            var error = computerModel.setConnectionSettings(pcIndex, mode, lan, tailscale)
+            if (error) errorText = error
+            else close()
         }
     }
 
@@ -382,11 +416,13 @@ CenteredGridView {
                 focus: true
 
                 Keys.onReturnPressed: {
-                    renamePcDialog.accept()
+                    if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(editText, false)
+                    else renamePcDialog.accept()
                 }
 
                 Keys.onEnterPressed: {
-                    renamePcDialog.accept()
+                    if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(editText, false)
+                    else renamePcDialog.accept()
                 }
             }
         }

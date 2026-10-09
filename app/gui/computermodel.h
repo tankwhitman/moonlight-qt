@@ -16,6 +16,7 @@ class ComputerModel : public QAbstractListModel
         WakeableRole,
         StatusUnknownRole,
         ServerSupportedRole,
+        ConnectionRole,
         DetailsRole
     };
 
@@ -42,6 +43,10 @@ public:
     Q_INVOKABLE void wakeComputer(int computerIndex);
 
     Q_INVOKABLE void renameComputer(int computerIndex, QString name);
+
+    Q_INVOKABLE QVariantMap connectionSettings(int computerIndex) const;
+
+    Q_INVOKABLE QString setConnectionSettings(int computerIndex, int mode, QString lan, QString tailscale);
 
     Q_INVOKABLE QString uuidAt(int computerIndex) const;
 

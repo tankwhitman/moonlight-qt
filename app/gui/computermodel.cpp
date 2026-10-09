@@ -44,6 +44,9 @@ QVariant ComputerModel::data(const QModelIndex& index, int role) const
         return computer->state == NvComputer::CS_UNKNOWN;
     case ServerSupportedRole:
         return computer->isSupportedServerVersion;
+    case ConnectionRole:
+        return (computer->connectionMode == 1 ? tr("LAN") : computer->connectionMode == 2 ? tr("Tailscale") : tr("Automatic")) +
+               " · " + (computer->state == NvComputer::CS_ONLINE ? computer->activeAddress.toString() : tr("Not connected"));
     case DetailsRole: {
         QString state, pairState;
 
@@ -74,6 +77,7 @@ QVariant ComputerModel::data(const QModelIndex& index, int role) const
         return tr("Name: %1").arg(computer->name) + '\n' +
                tr("Status: %1").arg(state) + '\n' +
                tr("Active Address: %1").arg(computer->activeAddress.toString()) + '\n' +
+               tr("Connection: %1").arg(computer->connectionMode == 1 ? tr("LAN") : computer->connectionMode == 2 ? tr("Tailscale") : tr("Automatic")) + '\n' +
                tr("UUID: %1").arg(computer->uuid) + '\n' +
                tr("Local Address: %1").arg(computer->localAddress.toString()) + '\n' +
                tr("Remote Address: %1").arg(computer->remoteAddress.toString()) + '\n' +
@@ -100,6 +104,56 @@ int ComputerModel::rowCount(const QModelIndex& parent) const
     return m_Computers.count();
 }
 
+QVariantMap ComputerModel::connectionSettings(int computerIndex) const
+{
+    if (computerIndex < 0 || computerIndex >= m_Computers.count()) return {};
+    auto* computer = m_Computers[computerIndex];
+    QReadLocker lock(&computer->lock);
+    return {{"mode", computer->connectionMode},
+            {"lan", computer->lanConnectionAddress.isNull() ? computer->localAddress.toString() : computer->lanConnectionAddress.toString()},
+            {"tailscale", computer->tailscaleConnectionAddress.isNull() ? QString() : computer->tailscaleConnectionAddress.toString()}};
+}
+
+QString ComputerModel::setConnectionSettings(int computerIndex, int mode, QString lan, QString tailscale)
+{
+    if (computerIndex < 0 || computerIndex >= m_Computers.count() || mode < 0 || mode > 2)
+        return tr("Select a valid host and connection mode.");
+    const auto parse = [](QString input, NvAddress& result) {
+        input = input.trimmed();
+        if (input.isEmpty()) return true;
+        const QStringList parts = input.split(':');
+        bool validPort = true;
+        const uint port = parts.size() == 2 ? parts[1].toUInt(&validPort) : DEFAULT_HTTP_PORT;
+        const QHostAddress ip(parts[0]);
+        if (parts.size() > 2 || ip.protocol() != QAbstractSocket::IPv4Protocol ||
+                ip.isNull() || ip.isLoopback() || ip.isMulticast() ||
+                !validPort || port == 0 || port > 65535) return false;
+        result = NvAddress(ip, uint16_t(port));
+        return true;
+    };
+    NvAddress lanAddress, tailscaleAddress;
+    if (!parse(lan, lanAddress) || !parse(tailscale, tailscaleAddress))
+        return tr("Enter an IPv4 address, optionally followed by :port (1–65535).");
+    if (!tailscaleAddress.isNull() && !QHostAddress(tailscaleAddress.address()).isInSubnet(QHostAddress("100.64.0.0"), 10))
+        return tr("The Tailscale address must be in the 100.64.0.0/10 range.");
+    if ((mode == 1 && lanAddress.isNull()) || (mode == 2 && tailscaleAddress.isNull()))
+        return tr("Enter an address for the selected connection mode.");
+    auto* computer = m_Computers[computerIndex];
+    {
+        QWriteLocker lock(&computer->lock);
+        if (computer->connectionMode == mode && computer->lanConnectionAddress == lanAddress &&
+                computer->tailscaleConnectionAddress == tailscaleAddress) return {};
+        computer->connectionMode = mode;
+        computer->lanConnectionAddress = lanAddress;
+        computer->tailscaleConnectionAddress = tailscaleAddress;
+        ++computer->connectionRevision;
+        computer->activeAddress = NvAddress();
+        computer->state = NvComputer::CS_UNKNOWN;
+    }
+    m_ComputerManager->clientSideAttributeUpdated(computer);
+    return {};
+}
+
 QString ComputerModel::uuidAt(int computerIndex) const
 {
     if (computerIndex < 0 || computerIndex >= m_Computers.count()) return {};
@@ -118,6 +172,7 @@ QHash<int, QByteArray> ComputerModel::roleNames() const
     names[WakeableRole] = "wakeable";
     names[StatusUnknownRole] = "statusUnknown";
     names[ServerSupportedRole] = "serverSupported";
+    names[ConnectionRole] = "connection";
     names[DetailsRole] = "details";
 
     return names;

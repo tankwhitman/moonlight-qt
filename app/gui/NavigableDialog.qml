@@ -3,6 +3,8 @@ import QtQuick.Controls 2.5
 
 Dialog {
     modal: true
+    background: Rectangle { color: "#172232"; radius: 16; border.color: "#34485f" }
+    Overlay.modal: Rectangle { color: "#b3000000" }
     anchors.centerIn: Overlay.overlay
 
     onClosed: {

@@ -403,12 +403,19 @@ Flickable {
                                             }
                                         }
 
+                                        Keys.onSpacePressed: function(event) {
+                                            if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(widthField, true)
+                                            else event.accepted = false
+                                        }
+
                                         Keys.onReturnPressed: {
-                                            customResolutionDialog.accept()
+                                            if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(widthField, true)
+                                            else customResolutionDialog.accept()
                                         }
 
                                         Keys.onEnterPressed: {
-                                            customResolutionDialog.accept()
+                                            if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(widthField, true)
+                                            else customResolutionDialog.accept()
                                         }
                                     }
 
@@ -431,12 +438,19 @@ Flickable {
                                             }
                                         }
 
+                                        Keys.onSpacePressed: function(event) {
+                                            if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(heightField, true)
+                                            else event.accepted = false
+                                        }
+
                                         Keys.onReturnPressed: {
-                                            customResolutionDialog.accept()
+                                            if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(heightField, true)
+                                            else customResolutionDialog.accept()
                                         }
 
                                         Keys.onEnterPressed: {
-                                            customResolutionDialog.accept()
+                                            if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(heightField, true)
+                                            else customResolutionDialog.accept()
                                         }
                                     }
                                 }
@@ -543,12 +557,19 @@ Flickable {
                                             }
                                         }
 
+                                        Keys.onSpacePressed: function(event) {
+                                            if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(fpsField, true)
+                                            else event.accepted = false
+                                        }
+
                                         Keys.onReturnPressed: {
-                                            customFpsDialog.accept()
+                                            if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(fpsField, true)
+                                            else customFpsDialog.accept()
                                         }
 
                                         Keys.onEnterPressed: {
-                                            customFpsDialog.accept()
+                                            if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(fpsField, true)
+                                            else customFpsDialog.accept()
                                         }
                                     }
                                 }

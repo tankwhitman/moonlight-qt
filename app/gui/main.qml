@@ -12,6 +12,10 @@ import SdlGamepadKeyNavigation 1.0
 
 ApplicationWindow {
     property bool pollingActive: false
+    property real uiScale: Math.max(1.0, Math.min(width / 1280, height / 720))
+    Material.theme: Material.Dark
+    Material.accent: "#66d9ef"
+    color: "#101722"
 
     // Set by SettingsView to force the back operation to pop all
     // pages except the initial view. This is required when doing
@@ -28,7 +32,7 @@ ApplicationWindow {
         // in order to improve contrast between GFE's placeholder box art
         // and the background of the app grid.
         if (SystemProperties.usesMaterial3Theme) {
-            Material.background = "#303030"
+            Material.background = "#101722"
         }
 
         SdlGamepadKeyNavigation.enable()
@@ -36,7 +40,10 @@ ApplicationWindow {
 
     Component.onCompleted: {
         // Show the window according to the user's preferences
-        if (SystemProperties.hasDesktopEnvironment) {
+        if (handheldMode) {
+            window.showFullScreen()
+        }
+        else if (SystemProperties.hasDesktopEnvironment) {
             if (StreamingPreferences.uiDisplayMode == StreamingPreferences.UI_MAXIMIZED) {
                 window.showMaximized()
             }
@@ -94,6 +101,12 @@ ApplicationWindow {
     // This configures the maximum width of the singleton attached QML ToolTip. If left unconstrained,
     // it will never insert a line break and just extend on forever.
     ToolTip.toolTip.contentWidth: Math.min(tooltipTextLayoutHelper.width, 400)
+
+    ControllerKeyboard { id: controllerKeyboard }
+
+    function editWithController(field, numeric) {
+        controllerKeyboard.edit(field, numeric)
+    }
 
     function goBack() {
         if (clearOnBack) {
@@ -233,9 +246,23 @@ ApplicationWindow {
         }
     }
 
+    footer: ToolBar {
+        visible: stackView.currentItem instanceof PcView || stackView.currentItem instanceof AppView
+        height: 52 * window.uiScale
+        background: Rectangle { color: "#172232" }
+        Label {
+            anchors.centerIn: parent
+            font.pixelSize: 18 * window.uiScale
+            text: StreamingPreferences.swapFaceButtons ?
+                qsTr("B  Select     A  Back     Y  Options     X / Start  Settings") :
+                qsTr("A  Select     B  Back     X  Options     Y / Start  Settings")
+        }
+    }
+
     header: ToolBar {
         id: toolBar
-        height: 60
+        height: 72 * window.uiScale
+        background: Rectangle { color: "#172232" }
         anchors.topMargin: 5
         anchors.bottomMargin: 5
 
@@ -244,7 +271,8 @@ ApplicationWindow {
             visible: toolBar.width > 700
             anchors.fill: parent
             text: stackView.currentItem.objectName
-            font.pointSize: 20
+            font.pixelSize: 28 * window.uiScale
+            font.bold: true
             elide: Label.ElideRight
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
@@ -545,11 +573,13 @@ ApplicationWindow {
                 focus: true
 
                 Keys.onReturnPressed: {
-                    addPcDialog.accept()
+                    if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(editText, false)
+                    else addPcDialog.accept()
                 }
 
                 Keys.onEnterPressed: {
-                    addPcDialog.accept()
+                    if (SdlGamepadKeyNavigation.getConnectedGamepads() > 0) window.editWithController(editText, false)
+                    else addPcDialog.accept()
                 }
             }
         }
