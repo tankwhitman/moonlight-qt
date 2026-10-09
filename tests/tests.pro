@@ -4,6 +4,12 @@ TEMPLATE = subdirs
 CONFIG += ordered
 
 contains(CONFIG, tests) {
+    linux {
+        connectionPolicy.file = $$PWD/connection/connection.pro
+        SUBDIRS += connectionPolicy
+        handheldUi.file = $$PWD/qml/handheld-ui.pro
+        SUBDIRS += handheldUi
+    }
     SUBDIRS += updates
     SUBDIRS += vrr
     SUBDIRS += haptics
