@@ -1104,6 +1104,8 @@ int main(int argc, char *argv[])
     }
 
     if (hasGUI) {
+        engine.rootContext()->setContextProperty("handheldMode", qEnvironmentVariableIsSet("GAMESCOPE_WAYLAND_DISPLAY") ||
+            qEnvironmentVariableIsSet("STEAM_GAMEPADUI") || qEnvironmentVariableIntValue("MOONLIGHT_HANDHELD") == 1);
         engine.rootContext()->setContextProperty("initialView", initialView);
         engine.rootContext()->setContextProperty("runConfigChecks", commandLineParserResult == GlobalCommandLineParser::NormalStartRequested);
 
