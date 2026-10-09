@@ -31,6 +31,8 @@ public:
 private:
     bool tryPollComputer(QNetworkAccessManager* nam, NvAddress address, bool& changed)
     {
+        quint64 revision;
+        { QReadLocker lock(&m_Computer->lock); revision = m_Computer->connectionRevision; }
         NvHTTP http(address, 0, m_Computer->serverCert, !m_Computer->isNvidiaServerSoftware, nam);
 
         QString serverInfo;
@@ -48,12 +50,15 @@ private:
             return false;
         }
 
-        changed = m_Computer->update(newState);
-        return true;
+        bool accepted = false;
+        changed = m_Computer->update(newState, revision, &accepted) || changed;
+        return accepted;
     }
 
     bool updateAppList(QNetworkAccessManager* nam, bool& changed)
     {
+        quint64 revision;
+        { QReadLocker lock(&m_Computer->lock); revision = m_Computer->connectionRevision; }
         NvHTTP http(m_Computer, nam);
 
         QVector<NvApp> appList;
@@ -68,7 +73,8 @@ private:
         }
 
         QWriteLocker lock(&m_Computer->lock);
-        changed = m_Computer->updateAppList(appList);
+        if (revision != m_Computer->connectionRevision) return false;
+        changed = m_Computer->updateAppList(appList) || changed;
         return true;
     }
 
@@ -94,7 +100,13 @@ private:
         while (!isInterruptionRequested()) {
             bool stateChanged = false;
             bool online = false;
-            bool wasOnline = m_Computer->state == NvComputer::CS_ONLINE;
+            quint64 revision;
+            bool wasOnline;
+            {
+                QReadLocker lock(&m_Computer->lock);
+                revision = m_Computer->connectionRevision;
+                wasOnline = m_Computer->state == NvComputer::CS_ONLINE;
+            }
             for (int i = 0; i < (wasOnline ? TRIES_BEFORE_OFFLINING : 1) && !online; i++) {
                 for (auto& address : m_Computer->uniqueAddresses()) {
                     if (isInterruptionRequested()) {
@@ -111,6 +123,11 @@ private:
                 }
             }
 
+            {
+                QWriteLocker lock(&m_Computer->lock);
+                // A route change invalidates the entire in-flight polling cycle.
+                if (revision != m_Computer->connectionRevision) continue;
+
             // Check if we failed after all retry attempts
             // Note: we don't need to acquire the read lock here,
             // because we're on the writing thread.
@@ -118,6 +135,8 @@ private:
                 qInfo() << m_Computer->name << "is now offline";
                 m_Computer->state = NvComputer::CS_OFFLINE;
                 stateChanged = true;
+            }
+
             }
 
             // Grab the applist if it's empty or it's been long enough that we need to refresh

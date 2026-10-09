@@ -48,7 +48,7 @@ public:
     setRemoteAddress(QHostAddress);
 
     bool
-    update(const NvComputer& that);
+    update(const NvComputer& that, quint64 expectedRevision = ~quint64(0), bool* accepted = nullptr);
 
     bool
     wake() const;
@@ -110,7 +110,13 @@ public:
     bool virtualDisplayFrameLimiterEnabled = false;
     uint32_t frameLimiterFpsLimitMilliHz = 0;
 
+    // Connection policy belongs to this client, never to serverinfo.
+    quint64 connectionRevision = 0;
+
     // Persisted traits
+    int connectionMode = 0; // 0: automatic, 1: LAN, 2: Tailscale
+    NvAddress lanConnectionAddress;
+    NvAddress tailscaleConnectionAddress;
     NvAddress localAddress;
     NvAddress remoteAddress;
     NvAddress ipv6Address;

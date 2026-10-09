@@ -38,6 +38,12 @@ NvComputer::NvComputer(QSettings& settings)
                                   settings.value(SER_IPV6PORT, QVariant(DEFAULT_HTTP_PORT)).toUInt());
     this->manualAddress = NvAddress(settings.value(SER_MANUALADDR).toString(),
                                     settings.value(SER_MANUALPORT, QVariant(DEFAULT_HTTP_PORT)).toUInt());
+    this->connectionMode = settings.value("connectionmode", 0).toInt();
+    if (connectionMode < 0 || connectionMode > 2) connectionMode = 0;
+    this->lanConnectionAddress = NvAddress(settings.value("lanconnectionaddress").toString(),
+        settings.value("lanconnectionport", DEFAULT_HTTP_PORT).toUInt());
+    this->tailscaleConnectionAddress = NvAddress(settings.value("tailscaleconnectionaddress").toString(),
+        settings.value("tailscaleconnectionport", DEFAULT_HTTP_PORT).toUInt());
     this->serverCert = QSslCertificate(settings.value(SER_SRVCERT).toByteArray());
     this->isNvidiaServerSoftware = settings.value(SER_NVIDIASOFTWARE).toBool();
 
@@ -79,6 +85,11 @@ void NvComputer::serialize(QSettings& settings, bool serializeApps) const
 {
     QReadLocker lock(&this->lock);
 
+    settings.setValue("connectionmode", connectionMode);
+    settings.setValue("lanconnectionaddress", lanConnectionAddress.address());
+    settings.setValue("lanconnectionport", lanConnectionAddress.port());
+    settings.setValue("tailscaleconnectionaddress", tailscaleConnectionAddress.address());
+    settings.setValue("tailscaleconnectionport", tailscaleConnectionAddress.port());
     settings.setValue(SER_NAME, name);
     settings.setValue(SER_CUSTOMNAME, hasCustomName);
     settings.setValue(SER_UUID, uuid);
@@ -108,7 +119,10 @@ void NvComputer::serialize(QSettings& settings, bool serializeApps) const
 
 bool NvComputer::isEqualSerialized(const NvComputer &that) const
 {
-    return this->name == that.name &&
+    return this->connectionMode == that.connectionMode &&
+           this->lanConnectionAddress == that.lanConnectionAddress &&
+           this->tailscaleConnectionAddress == that.tailscaleConnectionAddress &&
+           this->name == that.name &&
            this->hasCustomName == that.hasCustomName &&
            this->uuid == that.uuid &&
            this->macAddress == that.macAddress &&
@@ -501,6 +515,13 @@ QVector<NvAddress> NvComputer::uniqueAddresses() const
     QReadLocker readLocker(&lock);
     QVector<NvAddress> uniqueAddressList;
 
+    // An explicitly chosen route must never silently fall back to another IP.
+    if (connectionMode != 0) {
+        const NvAddress selected = connectionMode == 1 ? lanConnectionAddress : tailscaleConnectionAddress;
+        if (!selected.isNull()) uniqueAddressList.append(selected);
+        return uniqueAddressList;
+    }
+
     // Start with addresses correctly ordered
     uniqueAddressList.append(activeAddress);
     uniqueAddressList.append(localAddress);
@@ -530,13 +551,19 @@ QVector<NvAddress> NvComputer::uniqueAddresses() const
     return uniqueAddressList;
 }
 
-bool NvComputer::update(const NvComputer& that)
+bool NvComputer::update(const NvComputer& that, quint64 expectedRevision, bool* accepted)
 {
     bool changed = false;
 
     // Lock us for write and them for read
     QWriteLocker thisLock(&this->lock);
     QReadLocker thatLock(&that.lock);
+
+    if (accepted) *accepted = false;
+    if (expectedRevision != ~quint64(0) && expectedRevision != connectionRevision) return false;
+    if (connectionMode != 0 && that.activeAddress !=
+            (connectionMode == 1 ? lanConnectionAddress : tailscaleConnectionAddress)) return false;
+    if (accepted) *accepted = true;
 
     // UUID may not change or we're talking to a new PC
     Q_ASSERT(this->uuid == that.uuid);
